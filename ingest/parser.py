@@ -10,7 +10,14 @@ SCHEMA = json.loads(Path(SCHEMA_PATH).read_text())
 # Patterns for headings, timestamps, speakers, and procedures
 TIME_RE = re.compile(r"\[(\d{1,2})\.(\d{2})\s*(a\.m\.|p\.m\.)\]", re.IGNORECASE)
 HEADING_RE = re.compile(r"^[A-Z][A-Z '’\-\u2013\u2014&]+$")  # crude but works for Hansard headings
-SPEAKER_LINE_RE = re.compile(r"^([A-Z][a-z'.\- ]+)\s+\(([A-Za-z ]+)\s*-\s*([^)]+)\)\s*-\s*(.*)$")
+# The original expression for speaker lines assumed that surnames were
+# capitalised "normally" (e.g. "Smith"), which fails for Hansard's
+# convention of printing surnames in full caps (e.g. "Mr ROCKLIFF").
+# Relax the pattern to accept any combination of upper/lower case letters
+# after the first character so lines such as "Mr ROCKLIFF ..." are matched.
+SPEAKER_LINE_RE = re.compile(
+    r"^([A-Z][A-Za-z'.\- ]+)\s+\(([A-Za-z ]+)\s*-\s*([^)]+)\)\s*-\s*(.*)$"
+)
 SPEAKER_SIMPLE_RE = re.compile(r"^([A-Z][A-Za-z'.\- ]+)\s*-\s*(.*)$")
 PROCEDURE_LINES = [
     "Motion agreed to.",

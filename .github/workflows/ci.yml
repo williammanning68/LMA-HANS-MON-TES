@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # allow pushing processed data back to the repo
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,7 +23,7 @@ jobs:
           source .venv/bin/activate
           pip install -r requirements.txt pytest
 
-      - name: Parse sample (if any)
+      - name: Parse & build (if any raw files)
         run: |
           source .venv/bin/activate
           mkdir -p data/processed
@@ -44,3 +47,23 @@ jobs:
             data/processed/hansard.db
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Commit processed outputs to repo (main only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('data/processed/**') != '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # ensure we're on the branch that triggered this run
+          git checkout "$GITHUB_REF_NAME" 2>/dev/null || true
+
+          # force-add even if .gitignore excludes these paths
+          git add -f data/processed/utterances.jsonl data/processed/hansard.db || true
+
+          # only commit if there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): update processed outputs [skip ci]"
+            git push
+          else
+            echo "No changes in processed outputs."
+          fi

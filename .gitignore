@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+*.egg-info
+
+# Data & cache
+data/processed/*.db
+data/processed/*.jsonl
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

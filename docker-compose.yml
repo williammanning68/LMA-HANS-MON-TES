@@ -1,0 +1,26 @@
+services:
+  ingest:
+    build: .
+    volumes:
+      - .:/app
+    command: >
+      bash -lc "
+      python -m ingest.parser --in data/raw --out data/processed/utterances.jsonl &&
+      python -m ingest.build_db --jsonl data/processed/utterances.jsonl --db data/processed/hansard.db
+      "
+    restart: "no"
+
+  api:
+    build: .
+    environment:
+      - LLAMA_CKPT_DIR=${LLAMA_CKPT_DIR}
+      - LLAMA_TOKENIZER_PATH=${LLAMA_TOKENIZER_PATH}
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: >
+      uvicorn server.app:app --host 0.0.0.0 --port 8000
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
